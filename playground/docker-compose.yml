@@ -1,0 +1,20 @@
+version: '3.9'
+
+services:
+  app:
+    build:
+      context: . # Dockerfileの場所を指定（カレントディレクトリ）
+      dockerfile: Dockerfile # 使用するDockerfile名（デフォルトなら指定不要）
+    container_name: my-app-container
+    ports:
+      - "3000:3000" # ホストの3000ポートをコンテナの3000ポートにマッピング
+    environment:
+      - NEXT_TELEMETRY_DISABLED=1 # 環境変数の設定
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3000/api/health"]
+      interval: 10s
+      timeout: 3s
+      retries: 3
+    volumes:
+      - .:/app # ホストディレクトリとコンテナディレクトリの同期（開発時に便利）
+    command: ["yarn", "start"] # コンテナ起動時のコマンドを指定

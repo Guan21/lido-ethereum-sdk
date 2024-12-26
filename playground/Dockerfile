@@ -1,12 +1,26 @@
 # build env
-FROM node:16-alpine as build
+FROM node:20-alpine AS build
 
 WORKDIR /app
 
-RUN apk add --no-cache git=2.36.3-r0
-COPY package.json yarn.lock ./
+# 必要なツールをインストール
+RUN apk add --no-cache git=2.47.1-r0 python3 make g++
 
-RUN yarn install --frozen-lockfile --non-interactive --ignore-scripts && yarn cache clean
+# Pythonシンボリックリンク
+RUN ln -sf /usr/bin/python3 /usr/bin/python
+
+# 環境変数 PYTHON を設定
+ENV PYTHON=/usr/bin/python3
+
+RUN apk add --no-cache git=2.47.1-r0
+COPY package.json ./
+
+# # Install specific version of @types/react
+RUN yarn add -D @types/react@18.2.0
+RUN yarn add @lidofinance/lido-ui@latest
+
+# RUN yarn install --frozen-lockfile --non-interactive --ignore-scripts && yarn cache clean
+RUN yarn install --non-interactive --ignore-scripts && yarn upgrade && yarn cache clean
 
 COPY . .
 RUN NODE_NO_BUILD_DYNAMICS=true yarn build
@@ -14,12 +28,12 @@ RUN NODE_NO_BUILD_DYNAMICS=true yarn build
 RUN rm -rf /app/public/runtime && mkdir /app/public/runtime && chown node /app/public/runtime
 
 # final image
-FROM node:16-alpine as base
+FROM node:20-alpine AS base
 
 ENV NEXT_TELEMETRY_DISABLED=1
 
 WORKDIR /app
-RUN apk add --no-cache curl=7.83.1-r4
+RUN apk add --no-cache curl=8.11.1-r0
 COPY --from=build /app /app
 
 USER node
